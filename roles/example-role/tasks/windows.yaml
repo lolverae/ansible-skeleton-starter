@@ -1,0 +1,26 @@
+---
+Tasks:
+  - name: Install basic packages
+    block:
+      - name: Install choco via Powershell
+        ansible.windows.win_powershell:
+          script: |
+            Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      - name: Install OpenSSH via Powershell
+        ansible.windows.win_powershell:
+          script: |
+            Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH*'
+            Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+            Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+            Start-Service sshd             
+            Set-Service -Name sshd -StartupType 'Automatic'
+      - name: Ensure 7-Zip is installed through Chocolatey
+        win_chocolatey:
+          name:
+          - svn
+          - git
+          state: present
+    when: ansible_facts['distribution'] == 'windows'
+    become: true
+    become_user: root
+    ignore_errors: yes
